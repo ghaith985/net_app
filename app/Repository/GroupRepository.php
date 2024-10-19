@@ -40,24 +40,26 @@ class GroupRepository implements GroupRepositoryInterface
 
         return $returnGroup;
     }
+
     public function deleteGroup(array $data)
     {
         $groupOwner = Group::where('id', $data['group_id'])
             ->where('owner_id', auth()->id());
 
-        if ($groupOwner->count() > 0)
-//        if(isset($groupOwner))
+        if ($groupOwner->count() > 0) //        if(isset($groupOwner))
         {
             $groupOwner->delete();
-            return  true;
+            return true;
         }
         return false;
     }
+
     public function groupUsers($data)
     {
-        $groupuser = GroupMember::whereIn('group_id',$data['group_id'])->with('user')->get();
+        $groupuser = GroupMember::whereIn('group_id', $data['group_id'])->with('user')->get();
         return $groupuser;
     }
+
     public function allUserGroup()
     {
         $userId = auth()->id();
@@ -71,54 +73,51 @@ class GroupRepository implements GroupRepositoryInterface
         $group = Group::find($data->group_id);
         if (!$group) {
             return response()->json([
-                'messages'=>'Group not found',
+                'messages' => 'Group not found',
             ]);
         }
         if ($group->owner_id !== $currentUserId) {
             return response()->json([
-                'messages'=>'Dont have access to add to Group',
-            ],400);
+                'messages' => 'Dont have access to add to Group',
+            ], 400);
         }
         $existingMember = GroupMember::where('group_id', $data->group_id)->where('user_id', $data->user_id)->first();
 
         if ($existingMember) {
             return response()->json([
-                'messages'=>'User has in Group Already',
-            ],405);
+                'messages' => 'User has in Group Already',
+            ], 405);
         }
         $newMember = new GroupMember();
         $newMember->group_id = $data->group_id;
         $newMember->user_id = $data->user_id;
-        $newMember->join_date = now(); // يمكنك تغيير التاريخ حسب الحاجة
+        $newMember->join_date = now();
         $newMember->save();
         return response()->json([
-            'messages'=>'User Added To Group',
-        ],201);
+            'messages' => 'User Added To Group',
+        ], 201);
     }
 
 
-
-
-
-    public function deleteUserFromGroup($data){
+    public function deleteUserFromGroup($data)
+    {
         $currentUserId = Auth::id();
         $group = Group::find($data->group_id);
-
-        if ($group) {
+        if (!$group) {
             return response()->json([
-                'messages'=>'Group not found',
-            ],404);
+                'messages' => 'Group not found',
+            ], 404);
         }
         if ($group->owner_id !== $currentUserId) {
             return response()->json([
-                'messages'=>'Dont have access to delete from Group',
-            ]);
+                'messages' => 'Dont have access to delete from Group',
+            ], 400);
         }
         $file_user_reserve = FileUserReserved::where('group_id', $data->group_id)->where('user_id', $data->user_id)->first();
-        if ($file_user_reserve){
+        if ($file_user_reserve) {
             return response()->json([
-                'messages'=>'User has Reserved File',
-            ],405);
+                'messages' => 'User has Reserved File',
+            ], 405);
         }
 
 
@@ -126,19 +125,20 @@ class GroupRepository implements GroupRepositoryInterface
 
         if (!$existingMember) {
             return response()->json([
-                'messages'=>'User not in Group',
-            ],405);
+                'messages' => 'User not in Group',
+            ], 405);
         }
-        else{
-            GroupMember::where('group_id', $data->group_id)->where('user_id', $data->user_id)->delete();
+        $groupMember = GroupMember::where('group_id', $data->group_id)->where('user_id', $data->user_id)->first();
+        if ($groupMember) {
+            $groupMember->delete();
             return response()->json([
-                'messages'=>'User Deleted Successfully',
-            ],405);
+                'messages' => 'User Deleted Successfully',
+            ], 200);
         }
+        return response()->json([
+            'messages' => 'user not deleted',
+        ], 400);
     }
-
-
-
 
 
 }

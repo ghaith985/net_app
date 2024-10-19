@@ -13,6 +13,12 @@ return new class extends Migration
     {
         Schema::create('file_user_reserveds', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('group_id')->constrained('groups')
+                ->onUpdate('CASCADE')
+                ->onDelete('CASCADE');
+            $table->foreignId('user_id')->constrained('users')
+                ->onUpdate('CASCADE')
+                ->onDelete('CASCADE');
             $table->timestamps();
         });
     }

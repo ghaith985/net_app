@@ -30,7 +30,8 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/groupUsers',[GroupController::class,'groupUsers']);
     Route::get('/allUserGroup',[GroupController::class,'allUserGroup']);
     Route::post('/addUserToGroup',[GroupController::class,'addUserToGroup']);
-    Route::delete('/deleteUserFromGroup',[GroupController::class,'deleteUserFromGroup']);
+    Route::post('/deleteUserFromGroup',[GroupController::class,'deleteUserFromGroup']);
+//    Route::post('/userDeleteFromGroup',[GroupController::class,'userDeleteFromGroup']);
 
 
 
