@@ -89,11 +89,31 @@ class GroupController extends Controller
     {
         return $this->groupRepository->deleteUserFromGroup($request);
     }
-//    public function userDeleteFromGroup(Request $request)
-//    {
-//        return $this->groupRepository->userDeleteFromGroup($request);
-//    }
+    public function displayAllGroups()
+    {
+        return $this->groupRepository->displayAllGroups();
+    }
+    public function searchUser(Request $request):JsonResponse
+    {
+        return $this->groupRepository->searchUser($request);
+    }
+    public function searchGroup(Request $request):JsonResponse
+    {
+        return $this->groupRepository->searchGroup($request);
+    }
+    public function RequestToJoinGroup(Request $request):JsonResponse{
+        return $this->groupRepository->RequestToJoinGroup($request);
+    }
+    public  function AcceptedRequest(Request $request):JsonResponse{
+        return $this->groupRepository->AcceptedRequest($request);
+    }
+    public function unAcceptedRequest(Request $request):JsonResponse{
+        return $this->groupRepository->unAcceptedRequest($request);
+    }
 
-
+    public function displayUserRequestForGroup(Request $request)
+    {
+        return $this->groupRepository->displayUserRequestForGroup($request);
+    }
 
 }

@@ -12,7 +12,17 @@ interface GroupRepositoryInterface
     public function allUserGroup();
     public function addUserToGroup($request);
     public function deleteUserFromGroup($data);
-//    public function userDeleteFromGroup($request);
+    public function displayAllGroups();
+    public function searchUser($data);
+    public function searchGroup($data);
+    public function RequestToJoinGroup($data);
+    public function AcceptedRequest($data);
+    public function unAcceptedRequest($data);
+    public function displayUserRequestForGroup($data);
+
+
+
+
 
 
 }

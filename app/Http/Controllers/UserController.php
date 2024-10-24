@@ -136,4 +136,8 @@ class UserController extends Controller
         }
 
     }
+    public function displayAllUser()
+    {
+        return $this->userRepository->displayAllUser();
+    }
 }

@@ -17,4 +17,10 @@ class UserRepository implements UserRepositoryInterface
 
         return $user;
     }
+    public function displayAllUser(){
+        $allUser = User::all();
+        return response()->json([
+            'data'=>$allUser
+        ],200);
+    }
 }
