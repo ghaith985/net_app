@@ -10,7 +10,6 @@ class FileEvent extends Model
     use HasFactory;
     protected $fillable = [
         'file_id',
-        'event_type_id',
         'user_id',
         'date',
         'details',
@@ -20,10 +19,7 @@ class FileEvent extends Model
         return $this->belongsTo(File::class);
     }
 
-    public function eventType()
-    {
-        return $this->belongsTo(EventType::class);
-    }
+
 
     public function user()
     {

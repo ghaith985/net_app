@@ -67,14 +67,7 @@ class CreateForeignKeys extends Migration {
                 ->onUpdate('CASCADE')
                 ->onDelete('CASCADE');
         });
-        Schema::table('file_events', function (Blueprint $table) {
-            $table
-                ->foreign('event_type_id')
-                ->references('id')
-                ->on('event_types')
-                ->onUpdate('CASCADE')
-                ->onDelete('CASCADE');
-        });
+
         Schema::table('file_events', function (Blueprint $table) {
             $table
                 ->foreign('user_id')
@@ -103,7 +96,6 @@ class CreateForeignKeys extends Migration {
         });
         Schema::table('file_events', function (Blueprint $table) {
             $table->dropForeign(['file_id']);
-            $table->dropForeign(['event_type_id']);
             $table->dropForeign(['user_id']);
         });
 

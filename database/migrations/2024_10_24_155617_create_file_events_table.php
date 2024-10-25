@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('file_events', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('file_id');
-            $table->unsignedBigInteger('event_type_id');
             $table->unsignedBigInteger('user_id');
             $table->date('date');
             $table->text('details')->nullable();

@@ -31,13 +31,15 @@ class FileController extends Controller
         }
         $user_id=auth()->user()->id;
         $data['user_id']=$user_id;
+
         $file=$this->fileRepository->uploadFileToGroup($data);
         if ($file)
         {
-            $fileEvent=$this->fileRepository->addFileEvent($file->id,$user_id,1);
+
+            $fileEvent=$this->fileRepository->addFileEvent($file->id, $user_id);
             if($fileEvent)
             {
-                return response()->json(['status'=>true,'message'=>'File uploaded successfully','data'=>[$file,$fileEvent]],200);
+                return response()->json(['status'=>true,'message'=>'File uploaded successfully',],200);
             }
             else
             {

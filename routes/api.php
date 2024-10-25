@@ -43,7 +43,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::post('/displayUserRequestForGroup',[GroupController::class,'displayUserRequestForGroup']);
     ///////////////////////Files////////////////////////////////////////
     Route::middleware(['auth:sanctum', 'verified'])->group(function () {
-        //Route::post('/uploadFileToGroup',[FileController::class,'uploadFileToGroup']);
+        Route::post('/uploadFileToGroup',[FileController::class,'uploadFileToGroup']);
 
 
 
