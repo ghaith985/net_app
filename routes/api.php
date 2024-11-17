@@ -43,7 +43,20 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::post('/displayUserRequestForGroup',[GroupController::class,'displayUserRequestForGroup']);
     ///////////////////////Files////////////////////////////////////////
     Route::middleware(['auth:sanctum', 'verified'])->group(function () {
-        Route::post('/uploadFileToGroup',[FileController::class,'uploadFileToGroup']);
+        Route::post('/uploadFileToGroup',[FileController::class,'uploadFileToGroup']);//موافقة من الاونر  //كذا صورة
+        Route::post('/downloadFile',[FileController::class,'downloadFile'])->middleware(['CheckMember','FileReserved']);
+        Route::post('/deleteFile',[FileController::class,'deleteFile'])->middleware(['CheckFileOwner','FileReserved']);
+        Route::post('/checkIn',[FileController::class,'checkIn'])->middleware(['CheckMember','FileReserved']);
+        Route::post('/checkOut',[FileController::class,'checkOut']);
+        Route::post('/updateFileAfterCheckOut',[FileController::class,'updateFileAfterCheckOut'])->middleware(['CheckMember','FileReserved']);
+        Route::post('/bulkCheckIn',[FileController::class,'bulkCheckIn'])->middleware(['CheckMember','FileReserved']);
+
+
+
+
+
+
+
 
 
 

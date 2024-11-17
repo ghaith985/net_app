@@ -66,6 +66,12 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'CheckGroupName'=>\App\Http\Middleware\CheckGroupName::class,
         'CheckGroupOwner'=>\App\Http\Middleware\CheckGroupOwner::class,
+        'CheckMember'=>\App\Http\Middleware\CheckMember::class,
+        'FileReserved'=>\App\Http\Middleware\FileReserved::class,
+        'CheckFileOwner'=>\App\Http\Middleware\CheckFileOwner::class,
+
+
+
 
 
     ];
