@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Repository\UserRepositoryInterface;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\PersonalAccessToken;
 
 class UserController extends Controller
@@ -19,8 +21,7 @@ class UserController extends Controller
 
     public function register(Request $request)
     {
-        try
-        {
+        try {
             $data = $request->all();
             $rules = [
                 'name' => 'required|regex:/^[a-zA-Z0-9_]+$/|between:3,25|unique:users|alpha_dash',
@@ -35,40 +36,39 @@ class UserController extends Controller
                 return response()->json([
                     "messages" => $validation->errors()
                 ], 422);
-
             }
+
             $user = $this->userRepository->register($data);
-            if ($user)
-            {
-                $token = $user->createToken('auth_token')->plainTextToken;
-                $user['token']=$token;
+            if ($user) {
+                // Generate Access Token
+                $accessToken = $user->createToken('auth_token')->plainTextToken;
+
+                // Generate Refresh Token
+                $refreshToken = base64_encode(Str::random(40)); // أو أي طريقة توليد أخرى
+                $user->refresh_token = $refreshToken; // احفظه في قاعدة البيانات إذا أردت
+                $user->save();
 
                 return response()->json([
-                    'messages'=>'User has been Created',
-                    'data'=>$user
+                    'messages' => 'User has been Created',
+                    'data' => [
+                        'user' => $user,
+                        'access_token' => $accessToken,
+                        'refresh_token' => $refreshToken
+                    ]
                 ]);
-//                return api()->ok( 'User has been Created',$user);
-
-
-            }
-            else
-            {
+            } else {
                 return response()->json([
-                    'messages'=>'the process has been failed!',
-
+                    'messages' => 'The process has failed!',
                 ]);
-//                return api()->error('the process has been failed!');
             }
-        }
-        catch (Exception $e)
-        {
+        } catch (Exception $e) {
             return response()->json([
-                'messages'=>'the process has been failed!',
-                'data'=>$e
+                'messages' => 'The process has failed!',
+                'data' => $e->getMessage()
             ]);
-//                    return api()->error('the process has been failed!',$e);
         }
     }
+
     public function login(Request $request)
     {
         $data = $request->all();
