@@ -29,7 +29,7 @@ class UserController extends Controller
                 'last_name' => 'required|regex:/^[a-zA-Z0-9_]+$/|between:3,25',
                 'email' => 'required|email|unique:users',
                 'password' => 'required|min:8',
-                'role_id' => 'required'
+                'role_id' => 'required|in:1,2'
             ];
             $validation = Validator::make($data, $rules);
             if ($validation->fails()) {
@@ -37,6 +37,15 @@ class UserController extends Controller
                     "messages" => $validation->errors()
                 ], 422);
             }
+            // إنشاء المستخدم بناءً على الدور
+            if ($data['role_id'] == 1) {
+                // إنشاء حساب أدمن
+                $data['is_admin'] = true; // إذا كان لديك عمود في الجدول يدل على أن المستخدم هو أدمن
+            } else {
+                // إنشاء حساب مستخدم عادي
+                $data['is_admin'] = false;
+            }
+
 
             $user = $this->userRepository->register($data);
             if ($user) {

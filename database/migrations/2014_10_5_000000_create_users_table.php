@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('first_name');
             $table->string('last_name');
             $table->unsignedBigInteger('role_id');
+            $table->boolean('is_admin')->default(false); // بدون الكلمة after
 
 
             $table->timestamps();
@@ -31,5 +32,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('users');
+
     }
 };

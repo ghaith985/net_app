@@ -69,6 +69,8 @@ class Kernel extends HttpKernel
         'CheckMember'=>\App\Http\Middleware\CheckMember::class,
         'FileReserved'=>\App\Http\Middleware\FileReserved::class,
         'CheckFileOwner'=>\App\Http\Middleware\CheckFileOwner::class,
+        'PreventAdminActions'=>\App\Http\Middleware\PreventAdminActions::class,
+
 
 
 
