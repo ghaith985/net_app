@@ -148,10 +148,12 @@ class FileController extends Controller
             return response()->json(['status'=>false,'message'=>$validation->errors()->first()],500);
         }
         $user_id=auth()->user()->id;
-        $checkin=$this->fileRepository->checkIn($data);
+
         DB::beginTransaction();
         try{
-
+            $this->fileRepository->backupFile($data['file_id'], 'before_checkin');
+            // تنفيذ عملية الحجز
+            $checkin=$this->fileRepository->checkIn($data);
             if($checkin)
             {
                 $fileEvent=$this->fileRepository->addFileEvent($data['file_id'],$user_id,4);
@@ -164,6 +166,8 @@ class FileController extends Controller
                     $file_user_reserved->group_id = $file->group_id;
                     $file_user_reserved->user_id = $file->user_id;
                     $file_user_reserved->save();
+                    // نسخ احتياطي بعد الحجز
+                    $this->fileRepository->backupFile($data['file_id'], 'after_checkin');
 
                     DB::commit();
                     return response()->json(['status'=>true,'message'=>'File Has Been Reserved'],200);
@@ -197,10 +201,13 @@ class FileController extends Controller
             return response()->json(['status'=>false,'message'=>$validation->errors()->first()],500);
         }
         $user_id=auth()->user()->id;
-        $checkout=$this->fileRepository->checkOut($data);
+
         DB::beginTransaction();
         try {
-
+            // نسخ احتياطي قبل إلغاء الحجز
+            $this->fileRepository->backupFile($data['file_id'], 'before_checkout');
+            // تنفيذ عملية إلغاء الحجز
+            $checkout=$this->fileRepository->checkOut($data);
             if($checkout)
             {
                 $fileEvent=$this->fileRepository->addFileEvent($data['file_id'],$user_id,5);
@@ -209,6 +216,8 @@ class FileController extends Controller
                     $file_id=$data['file_id'];
                     $file=File::find($file_id);
                     FileUserReserved::where('group_id', $file->group_id)->where('user_id', $file->user_id)->delete();
+                    // نسخ احتياطي بعد إلغاء الحجز
+                    $this->fileRepository->backupFile($data['file_id'], 'after_checkout');
                     DB::commit();
                     return response()->json(['status'=>true,'message'=>'File Has Been Un-Reserved'],200);
                 }
@@ -243,9 +252,10 @@ class FileController extends Controller
         {
             return response()->json(['status'=>false,'message'=>$validation->errors()->first()],500);
         }
-        $file=$this->fileRepository->updateFileAfterCheckOut($data);
+
         DB::beginTransaction();
         try {
+            $file=$this->fileRepository->updateFileAfterCheckOut($data);
             if ($file)
             {
                 $fileEvent=$this->fileRepository->addFileEvent($file->id,auth()->user()->id,6);
@@ -303,6 +313,24 @@ class FileController extends Controller
             return response()->json(['message' => $e->getMessage()], 500);
         }
 
+    }
+    public function backupFile(Request $request, int $fileId): JsonResponse
+    {
+        try {
+            // اجلب الحدث من الطلب، مع إعطاء قيمة افتراضية إذا لم يتم توفيرها
+            $event = $request->input('event', 'manual');
+
+            // استدعاء التابع في Repository مع تمرير fileId وevent
+            $backupStatus = $this->fileRepository->backupFile($fileId, $event);
+
+            if ($backupStatus) {
+                return response()->json(['status' => true, 'message' => 'Backup created successfully']);
+            }
+
+            return response()->json(['status' => false, 'message' => 'Failed to create backup'], 500);
+        } catch (\Exception $e) {
+            return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 
     }

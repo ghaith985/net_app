@@ -76,6 +76,14 @@ class CreateForeignKeys extends Migration {
                 ->onUpdate('CASCADE')
                 ->onDelete('CASCADE');
         });
+        Schema::table('file_backups', function (Blueprint $table) {
+            $table
+                ->foreign('file_id')
+                ->references('id')
+                ->on('files')
+                ->onUpdate('CASCADE')
+                ->onDelete('CASCADE');
+        });
 
     }
     public function down()
@@ -98,7 +106,10 @@ class CreateForeignKeys extends Migration {
             $table->dropForeign(['file_id']);
             $table->dropForeign(['user_id']);
         });
+        Schema::table('file_backups', function (Blueprint $table) {
+            $table->dropForeign(['file_id']);
 
+        });
 
     }
 }

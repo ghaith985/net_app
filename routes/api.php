@@ -50,6 +50,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
         Route::post('/checkOut',[FileController::class,'checkOut','PreventAdminActions']);
         Route::post('/updateFileAfterCheckOut',[FileController::class,'updateFileAfterCheckOut'])->middleware(['CheckMember','FileReserved','PreventAdminActions']);
         Route::post('/bulkCheckIn',[FileController::class,'bulkCheckIn'])->middleware(['CheckMember','FileReserved','PreventAdminActions']);
+//        Route::post('/backupFile/{fileId}',[FileController::class,'backupFile']);
 
 
 

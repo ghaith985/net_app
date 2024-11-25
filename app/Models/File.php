@@ -31,4 +31,8 @@ class File extends Model
     {
         return $this->hasMany(FileEvent::class);
     }
+    public function backups()
+    {
+        return $this->hasMany(FileBackup::class);
+    }
 }

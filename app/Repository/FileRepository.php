@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Group;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class FileRepository implements  FileRepositoryInterface
@@ -197,5 +198,22 @@ class FileRepository implements  FileRepositoryInterface
         }
         return $isReserved;
     }
+    public function backupFile(int $fileId, string $event): bool
+    {
+        $file = $this->fileModel->find($fileId);
+
+        if (!$file) {
+            throw new \Exception("File not found");
+        }
+
+        return DB::table('file_backups')->insert([
+            'file_id' => $fileId,
+            'file_data' => json_encode($file),
+            'version' => now()->format('YmdHis') . "_$event",
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
 
 }

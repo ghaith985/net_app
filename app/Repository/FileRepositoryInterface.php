@@ -16,6 +16,8 @@ interface FileRepositoryInterface
     public function checkOut($data): bool;
     public function updateFileAfterCheckOut($data): ?File;
     public function bulkCheckIn($data): bool;
+    public function backupFile(int $fileId, string $event): bool;
+
 
 
 
