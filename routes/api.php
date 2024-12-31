@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\GroupController;
+use App\Http\Controllers\SanctumSettingsController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -25,6 +26,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::post('/register',[UserController::class,'register']);
 Route::post('/login',[UserController::class,'login']);
 Route::post('/logout',[UserController::class,'logout']);
+Route::post('/renew-token', [UserController::class, 'renewToken']);
+
 ///////////////////////groups////////////////////////////////
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::post('/creatGroup',[GroupController::class,'creatGroup'])->Middleware('CheckGroupName','PreventAdminActions');
@@ -41,6 +44,9 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::post('/AcceptedRequest',[GroupController::class,'AcceptedRequest','PreventAdminActions']);
     Route::post('/unAcceptedRequest',[GroupController::class,'unAcceptedRequest','PreventAdminActions']);
     Route::post('/displayUserRequestForGroup',[GroupController::class,'displayUserRequestForGroup']);
+    Route::get('/files/{group_id}', [FileController::class, 'getFilesByGroup'])->middleware('CheckMember');
+    Route::get('/reserved-files', [FileController::class, 'getReservedFiles'])->middleware('CheckMember');
+
     ///////////////////////Files////////////////////////////////////////
     Route::middleware(['auth:sanctum', 'verified'])->group(function () {
         Route::post('/uploadFileToGroup',[FileController::class,'uploadFileToGroup'])->middleware(['PreventAdminActions']);//موافقة من الاونر  //كذا صورة
@@ -48,9 +54,10 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
         Route::post('/deleteFile',[FileController::class,'deleteFile'])->middleware(['CheckFileOwner','FileReserved','PreventAdminActions']);
         Route::post('/checkIn',[FileController::class,'checkIn'])->middleware(['CheckMember','FileReserved','PreventAdminActions']);
         Route::post('/checkOut',[FileController::class,'checkOut','PreventAdminActions']);
-        Route::post('/updateFileAfterCheckOut',[FileController::class,'updateFileAfterCheckOut'])->middleware(['CheckMember','FileReserved','PreventAdminActions']);
+        Route::post('/updateFileAfterCheckOut',[FileController::class,'updateFileAfterCheckOut'])->middleware(['CheckMember','PreventAdminActions']);
         Route::post('/bulkCheckIn',[FileController::class,'bulkCheckIn'])->middleware(['CheckMember','FileReserved','PreventAdminActions']);
 //        Route::post('/backupFile/{fileId}',[FileController::class,'backupFile']);
+
 
 
 

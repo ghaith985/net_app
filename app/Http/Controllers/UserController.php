@@ -17,6 +17,44 @@ class UserController extends Controller
     {
         $this->userRepository = $userRepository;
     }
+    public function renewToken(Request $request)
+    {
+        $request->validate([
+            'refresh_token' => 'required|string',
+        ]);
+
+        // البحث عن المستخدم الذي يمتلك الـ Refresh Token
+        $user = \App\Models\User::where('refresh_token', $request->refresh_token)->first();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'Invalid refresh token.',
+            ], 401);
+        }
+
+        // التحقق من صلاحية Refresh Token (اختياري)
+        // يمكنك إضافة شروط إضافية هنا إذا أردت.
+
+        // حذف التوكينات السابقة
+        $user->tokens()->delete();
+
+        // إنشاء توكين جديد
+        $newAccessToken = $user->createToken('auth_token')->plainTextToken;
+
+        // إنشاء Refresh Token جديد
+        $newRefreshToken = base64_encode(Str::random(40));
+        $user->refresh_token = $newRefreshToken;
+        $user->save();
+
+        return response()->json([
+            'message' => 'Token renewed successfully.',
+            'data' => [
+                'access_token' => $newAccessToken,
+                'refresh_token' => $newRefreshToken,
+            ],
+        ]);
+    }
+
 
 
     public function register(Request $request)
@@ -51,10 +89,12 @@ class UserController extends Controller
             if ($user) {
                 // Generate Access Token
                 $accessToken = $user->createToken('auth_token')->plainTextToken;
+                // Calculate Expiration Time
+                $expirationMinutes = config('sanctum.expiration'); // قراءة وقت الصلاحية من الإعدادات
+                $expirationTime = $expirationMinutes ? now()->addMinutes($expirationMinutes)->toDateTimeString() : null;
 
-                // Generate Refresh Token
-                $refreshToken = base64_encode(Str::random(40)); // أو أي طريقة توليد أخرى
-                $user->refresh_token = $refreshToken; // احفظه في قاعدة البيانات إذا أردت
+                $newRefreshToken = base64_encode(Str::random(40));
+                $user->refresh_token = $newRefreshToken;
                 $user->save();
 
                 return response()->json([
@@ -62,7 +102,8 @@ class UserController extends Controller
                     'data' => [
                         'user' => $user,
                         'access_token' => $accessToken,
-                        'refresh_token' => $refreshToken
+                        'token_expiration' => $expirationTime ,// وقت انتهاء صلاحية التوكين
+                        'refresh_token' => $newRefreshToken // وقت انتهاء صلاحية التوكين
                     ]
                 ]);
             } else {
@@ -96,7 +137,15 @@ class UserController extends Controller
         if ((Auth::attempt(['name' => $request->name, 'password' => $request->password]))) {
             $user = Auth::user();
             $token = $user->createToken('auth_token')->plainTextToken;
+            $expirationMinutes = config('sanctum.expiration'); // قراءة وقت الصلاحية من الإعدادات
+            $expirationTime = $expirationMinutes ? now()->addMinutes($expirationMinutes)->toDateTimeString() : null;
+            $newRefreshToken = base64_encode(Str::random(40));
+            $user->refresh_token = $newRefreshToken;
+            $user->save();
+
             $datares['token'] = $token;
+            $datares['token_expiration'] = $expirationTime;
+            $datares['refresh_token'] = $newRefreshToken;
             return response()->json([
                 'messages' => 'User has been Login',
                 'data' => $datares

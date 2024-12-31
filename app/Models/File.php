@@ -35,4 +35,8 @@ class File extends Model
     {
         return $this->hasMany(FileBackup::class);
     }
+    public function fileUserReserved()
+    {
+        return $this->hasMany(FileUserReserved::class);
+    }
 }

@@ -4,10 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\File;
 use App\Models\FileUserReserved;
+use App\Models\GroupMember;
+use App\Models\User;
+use App\Notifications\FileReleased;
 use App\Repository\FileRepositoryInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -164,7 +168,8 @@ class FileController extends Controller
                     $file=File::find($file_id);
                     $file_user_reserved = new FileUserReserved();
                     $file_user_reserved->group_id = $file->group_id;
-                    $file_user_reserved->user_id = $file->user_id;
+                    $file_user_reserved->user_id =  $user_id;
+                    $file_user_reserved->file_id =$file_id;
                     $file_user_reserved->save();
                     // نسخ احتياطي بعد الحجز
                     $this->fileRepository->backupFile($data['file_id'], 'after_checkin');
@@ -218,6 +223,9 @@ class FileController extends Controller
                     FileUserReserved::where('group_id', $file->group_id)->where('user_id', $file->user_id)->delete();
                     // نسخ احتياطي بعد إلغاء الحجز
                     $this->fileRepository->backupFile($data['file_id'], 'after_checkout');
+                    // إرسال الإشعارات للمجموعة
+                  $this->sendGroupNotifications($file);
+
                     DB::commit();
                     return response()->json(['status'=>true,'message'=>'File Has Been Un-Reserved'],200);
                 }
@@ -236,6 +244,14 @@ class FileController extends Controller
             DB::rollback();
             return response()->json(['message' => $e->getMessage()], 500);
         }
+    }
+    private function sendGroupNotifications($file)
+    {
+        // الحصول على جميع المستخدمين في نفس المجموعة
+        $users = GroupMember::where('group_id', $file->group_id)->get();
+
+        // إرسال إشعار لكل مستخدم
+        Notification::send($users, new FileReleased($file));
     }
 
 
@@ -286,20 +302,17 @@ class FileController extends Controller
         try{
             if ($result)
             {
-                $file_id=$data['id1'];
-                $file=File::find($file_id);
-                $file_user_reserved = new FileUserReserved();
-                $file_user_reserved->group_id = $file->group_id;
-                $file_user_reserved->user_id = $file->user_id;
-                $file_user_reserved->save();
-
-                $file_id=$data['id2'];
-                $file=File::find($file_id);
-                $file_user_reserved = new FileUserReserved();
-                $file_user_reserved->group_id = $file->group_id;
-                $file_user_reserved->user_id = $file->user_id;
-                $file_user_reserved->save();
-
+                $count=count($data);
+               // dd($count);
+                for($i=1;$i<=$count-1;$i++)
+                {
+                    $id = $data['id' . $i];
+                    $file_user_reserved = new FileUserReserved();
+                    $file_user_reserved->group_id = $request->group_id;
+                    $file_user_reserved->user_id =  auth()->user()->id;
+                    $file_user_reserved->file_id =$id;
+                    $file_user_reserved->save();
+                }
                 DB::commit();
 
                 return response()->json(['status'=>true,'message'=>'Files Has Been Checked In'],200);
@@ -332,5 +345,45 @@ class FileController extends Controller
             return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
         }
     }
+
+    public function getFilesByGroup($group_id)
+    {
+        // استعلام للحصول على الملفات المطلوبة
+        $files = File::where('group_id', $group_id)
+            ->where('is_active', true)
+            ->where('is_reserved', false)
+            ->get();
+
+        // إرجاع البيانات كـ JSON
+        return response()->json([
+            'success' => true,
+            'data' => $files
+        ], 200);
+    }
+
+    public function getReservedFiles(Request $request)
+    {
+        // التحقق من المدخلات
+        $request->validate([
+            'group_id' => 'required|integer'
+        ]);
+
+        $userId = auth()->user()->id;
+        $groupId = $request->group_id;
+
+        // استعلام لجلب الملفات المحجوزة باستخدام join مع جدول files
+        $reservedFiles = FileUserReserved::join('files', 'file_user_reserveds.file_id', '=', 'files.id')
+            ->where('file_user_reserveds.user_id', $userId)
+            ->where('file_user_reserveds.group_id', $groupId)
+            ->select('files.*')  // تحديد الحقول المطلوبة من جدول الملفات
+            ->get();
+
+        // إرجاع البيانات
+        return response()->json([
+            'success' => true,
+            'data' => $reservedFiles
+        ], 200);
+    }
+
 
     }

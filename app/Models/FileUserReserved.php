@@ -8,11 +8,17 @@ use Illuminate\Database\Eloquent\Model;
 class FileUserReserved extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'group_id',
         'user_id',
+        'file_id', // أضف هذا الحقل
     ];
 
+    public function file()
+    {
+        return $this->belongsTo(File::class);
+    }
     public function group()
     {
         return $this->belongsTo(Group::class);

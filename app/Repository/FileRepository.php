@@ -141,23 +141,23 @@ class FileRepository implements  FileRepositoryInterface
     {
         $file=$data['file'];
         $fileName=$file->getClientOriginalName();
-        //  dd($fileName);
+//          dd($fileName);
         $basename = pathinfo($fileName, PATHINFO_FILENAME);
-        // dd($basename);
+//         dd($basename);
         $fileExtension=$file->getClientOriginalExtension();
         // dd($fileExtension);
-        $fileDb=$this->fileModel->where('id',$data['file_id'])->where('name',$basename)->where('extension',$fileExtension)->where('is_active',1)->first();
+            $fileDb=$this->fileModel->where('id',$data['file_id'])->where('is_active',1)->first();
 //       dd($fileDb);
 
         if($fileDb)
         {
             $groupName=$this->groupModel->where('id',$fileDb->group_id)->first()->name;
-//            dd($groupName);
-            $exist=Storage::disk('public')->exists($fileName);
+//         dd($groupName);
+//            $exist=Storage::disk('public')->exists($fileName);
 //             dd($exist);
-            if ($exist)
-            {
-                $result=Storage::disk('public')->put($groupName . '/' . $fileName, file_get_contents($file), [
+
+                $result=Storage::disk('public')->put(  $fileName, file_get_contents($file), [
+
                     'overwrite' => true,
                 ]);
 //                dd($result);
@@ -165,16 +165,24 @@ class FileRepository implements  FileRepositoryInterface
                 // dd($result);
                 if($result)
                 {
+
+                    $fileUrl = Storage::disk('public')->url($fileName);
+                    $fileDb->name = $basename;
+                    $fileDb->extension = $fileExtension;
+                    $fileDb->group_id = $fileDb['group_id'];
+                    $fileDb->user_id = $fileDb['user_id'];
+                    $fileDb->is_active = $fileDb['is_active'];
+                    $fileDb->is_reserved = $fileDb['is_reserved'];
+                    $fileDb->path = $fileUrl;
+                    $fileDb->save();
                     return $fileDb;
+//
                 }
                 else
                 {
                     return null;
                 }
-            }else
-            {
-                return null;
-            }
+
 
 
         }else
@@ -187,7 +195,7 @@ class FileRepository implements  FileRepositoryInterface
     {
         $count=count($data);
         $isReserved=false;
-        for($i=1;$i<=$count;$i++)
+        for($i=1;$i<=$count-1;$i++)
         {
             $id=$data['id'.$i];
             $result= $this->fileModel->where('id',$id)->where('is_active',1)->lockForUpdate()->update(['is_reserved'=>1]);
