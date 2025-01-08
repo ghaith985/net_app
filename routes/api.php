@@ -35,15 +35,15 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     Route::get('/groupUsers',[GroupController::class,'groupUsers']);
     Route::get('/allUserGroup',[GroupController::class,'allUserGroup']);
     Route::post('/addUserToGroup',[GroupController::class,'addUserToGroup'])->middleware('CheckGroupOwner','PreventAdminActions');
-    Route::post('/deleteUserFromGroup',[GroupController::class,'deleteUserFromGroup','PreventAdminActions']);
-    Route::get('/displayAllUser',[UserController::class,'displayAllUser']);
-    Route::get('/displayAllGroups',[GroupController::class,'displayAllGroups']);
-    Route::get('/searchUser',[GroupController::class,'searchUser','PreventAdminActions']);
-    Route::get('/searchGroup',[GroupController::class,'searchGroup','PreventAdminActions']);
-    Route::post('/RequestToJoinGroup',[GroupController::class,'RequestToJoinGroup','PreventAdminActions']);
-    Route::post('/AcceptedRequest',[GroupController::class,'AcceptedRequest','PreventAdminActions']);
-    Route::post('/unAcceptedRequest',[GroupController::class,'unAcceptedRequest','PreventAdminActions']);
-    Route::post('/displayUserRequestForGroup',[GroupController::class,'displayUserRequestForGroup']);
+    Route::post('/deleteUserFromGroup',[GroupController::class,'deleteUserFromGroup'])->middleware('CheckGroupOwner','PreventAdminActions');
+    Route::get('/displayAllUser',[UserController::class,'displayAllUser'])->middleware('PreventAdminActions');
+    Route::get('/displayAllGroups',[GroupController::class,'displayAllGroups'])->middleware('PreventAdminActions');
+    Route::get('/searchUser',[GroupController::class,'searchUser'])->middleware('PreventAdminActions');
+    Route::get('/searchGroup',[GroupController::class,'searchGroup'])->middleware('PreventAdminActions');
+    Route::post('/RequestToJoinGroup',[GroupController::class,'RequestToJoinGroup'])->middleware('CheckGroupOwner','PreventAdminActions');
+    Route::post('/AcceptedRequest',[GroupController::class,'AcceptedRequest'])->middleware('CheckGroupOwner','PreventAdminActions');
+    Route::post('/unAcceptedRequest',[GroupController::class,'unAcceptedRequest'])->middleware('CheckGroupOwner','PreventAdminActions');
+    Route::post('/displayUserRequestForGroup',[GroupController::class,'displayUserRequestForGroup'])->middleware('PreventAdminActions');
     Route::get('/files/{group_id}', [FileController::class, 'getFilesByGroup'])->middleware('CheckMember');
     Route::get('/reserved-files', [FileController::class, 'getReservedFiles'])->middleware('CheckMember');
 
@@ -53,10 +53,14 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
         Route::post('/downloadFile',[FileController::class,'downloadFile'])->middleware(['CheckMember','FileReserved','PreventAdminActions']);
         Route::post('/deleteFile',[FileController::class,'deleteFile'])->middleware(['CheckFileOwner','FileReserved','PreventAdminActions']);
         Route::post('/checkIn',[FileController::class,'checkIn'])->middleware(['CheckMember','FileReserved','PreventAdminActions']);
-        Route::post('/checkOut',[FileController::class,'checkOut','PreventAdminActions']);
-        Route::post('/updateFileAfterCheckOut',[FileController::class,'updateFileAfterCheckOut'])->middleware(['CheckMember','PreventAdminActions']);
+        Route::post('/checkOut',[FileController::class,'checkOut'])->middleware('CheckMember','PreventAdminActions');
+        Route::post('/updateFileAfterCheckOut',[FileController::class,'updateFileAfterCheckOut'])->middleware(['CheckMember','PreventAdminActions','fileTracing']);
         Route::post('/bulkCheckIn',[FileController::class,'bulkCheckIn'])->middleware(['CheckMember','FileReserved','PreventAdminActions']);
 //        Route::post('/backupFile/{fileId}',[FileController::class,'backupFile']);
+        Route::get('/showFileReport/{file_id}', [FileController::class, 'showFileReport'])->middleware('CheckMember');
+        Route::get('/showFileReportPdf/{file_id}', [FileController::class, 'showFileReportPdf'])->middleware('CheckMember');
+        Route::get('/showFileReportCsv/{file_id}', [FileController::class, 'showFileReportCsv'])->middleware('CheckMember');
+
 
 
 

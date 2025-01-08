@@ -69,11 +69,12 @@ class FileRepository implements  FileRepositoryInterface
     {
         return $this->fileModel->where('group_id',$group_id)->where('name',$file_name)->where('extension',$file_extension)->where('is_active',1)->exists();
     }
-    public function addFileEvent($file_id,$user_id)
+    public function addFileEvent($file_id,$user_id,$details)
     {
         $fileEventModel= new FileEvent();
         $fileEventModel->file_id=$file_id;
         $fileEventModel->user_id=$user_id;
+        $fileEventModel->details=$details;
         $fileEventModel->date=Carbon::now();
 
         $fileEventModel->save();

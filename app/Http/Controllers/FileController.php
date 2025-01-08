@@ -8,10 +8,12 @@ use App\Models\GroupMember;
 use App\Models\User;
 use App\Notifications\FileReleased;
 use App\Repository\FileRepositoryInterface;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -43,7 +45,7 @@ class FileController extends Controller
         if ($file)
         {
 
-            $fileEvent=$this->fileRepository->addFileEvent($file->id, $user_id);
+            $fileEvent=$this->fileRepository->addFileEvent($file->id, $user_id,"UploadFile");
             if($fileEvent)
             {
                 return response()->json(['status'=>true,'message'=>'File uploaded successfully',],200);
@@ -76,7 +78,7 @@ class FileController extends Controller
 
             // هنا نتحقق إذا كانت الاستجابة كائن StreamedResponse
             if ($response instanceof \Symfony\Component\HttpFoundation\StreamedResponse) {
-                $fileEvent = $this->fileRepository->addFileEvent($data['file_id'], $user_id, 2);
+                $fileEvent = $this->fileRepository->addFileEvent($data['file_id'], $user_id, "DownloadFile");
                 if ($fileEvent) {
                     DB::commit();
                     return $response; // أعد كائن StreamedResponse مباشرة
@@ -118,7 +120,7 @@ class FileController extends Controller
 
             if ($responseData)
             {
-                $fileEvent=$this->fileRepository->addFileEvent($data['file_id'],$user_id);
+                $fileEvent=$this->fileRepository->addFileEvent($data['file_id'],$user_id,"DeleteFile");
 //                dd($fileEvent);
                 if ($fileEvent)
                 {
@@ -160,7 +162,7 @@ class FileController extends Controller
             $checkin=$this->fileRepository->checkIn($data);
             if($checkin)
             {
-                $fileEvent=$this->fileRepository->addFileEvent($data['file_id'],$user_id,4);
+                $fileEvent=$this->fileRepository->addFileEvent($data['file_id'],$user_id,"CheckInFile");
 //            dd($fileEvent);
                 if ($fileEvent)
                 {
@@ -215,7 +217,7 @@ class FileController extends Controller
             $checkout=$this->fileRepository->checkOut($data);
             if($checkout)
             {
-                $fileEvent=$this->fileRepository->addFileEvent($data['file_id'],$user_id,5);
+                $fileEvent=$this->fileRepository->addFileEvent($data['file_id'],$user_id,"CheckOutFile");
                 if ($fileEvent)
                 {
                     $file_id=$data['file_id'];
@@ -274,7 +276,7 @@ class FileController extends Controller
             $file=$this->fileRepository->updateFileAfterCheckOut($data);
             if ($file)
             {
-                $fileEvent=$this->fileRepository->addFileEvent($file->id,auth()->user()->id,6);
+                $fileEvent=$this->fileRepository->addFileEvent($file->id,auth()->user()->id,"updateFileAfterCheckOut");
                 if($fileEvent)
                 {
                     DB::commit();
@@ -384,6 +386,174 @@ class FileController extends Controller
             'data' => $reservedFiles
         ], 200);
     }
+    public function showFileReport($file_id)
+    {
+        // جلب معلومات الملف مع العمليات المرتبطة والمستخدمين
+        $file = File::with(['user', 'group', 'fileEvents.user'])->find($file_id);
+
+        if (!$file) {
+            return response()->json(['message' => 'File not found'], 404);
+        }
+
+        // تنسيق التقرير
+        $report = [
+            'file_id' => $file->id,
+            'file_name' => $file->name,
+            'file_extension' => $file->extension,
+            'group_name' => $file->group ? $file->group->name : 'N/A',
+            'path' => $file->path,
+            'is_active' => $file->is_active,
+            'is_reserved' => $file->is_reserved,
+            'created_at' => $file->created_at,
+            'operations' => $file->fileEvents->map(function ($event) {
+                return [
+                    'operation_id' => $event->id,
+                    'date' => $event->date,
+                    'details' => $event->details,
+                    'performed_by' => $event->user ? $event->user->name : 'N/A',
+                ];
+            }),
+        ];
+
+        return response()->json($report);
+    }
+
+    public function showFileReportPdf($file_id)
+    {
+        // جلب معلومات الملف مع العمليات المرتبطة والمستخدمين
+        $file = File::with(['user', 'group', 'fileEvents.user'])->find($file_id);
+
+        if (!$file) {
+            return response()->json(['message' => 'File not found'], 404);
+        }
+
+        // تنسيق البيانات
+        $operations = $file->fileEvents->map(function ($event) {
+            return [
+                'operation_id' => $event->id,
+                'date' => $event->date,
+                'details' => $event->details,
+                'performed_by' => $event->user ? $event->user->name : 'N/A',
+            ];
+        });
+
+        // إنشاء محتوى HTML يدويًا
+        $html = "
+            <h1 style='text-align: center;'>File Report</h1>
+            <h2>File Details</h2>
+            <p><strong>File Name:</strong> {$file->name}</p>
+            <p><strong>Extension:</strong> {$file->extension}</p>
+            <p><strong>Uploaded By:</strong> " . ($file->user ? $file->user->name : 'N/A') . "</p>
+            <p><strong>Group:</strong> " . ($file->group ? $file->group->name : 'N/A') . "</p>
+            <p><strong>Path:</strong> {$file->path}</p>
+            <p><strong>Is Active:</strong> " . ($file->is_active ? 'Yes' : 'No') . "</p>
+            <p><strong>Is Reserved:</strong> " . ($file->is_reserved ? 'Yes' : 'No') . "</p>
+            <p><strong>Created At:</strong> {$file->created_at}</p>
+
+            <h2>Operations</h2>
+            <table style='width: 100%; border-collapse: collapse;'>
+                <thead>
+                    <tr>
+                        <th style='border: 1px solid black; padding: 8px;'>#</th>
+                        <th style='border: 1px solid black; padding: 8px;'>Date</th>
+                        <th style='border: 1px solid black; padding: 8px;'>Details</th>
+                        <th style='border: 1px solid black; padding: 8px;'>Performed By</th>
+                    </tr>
+                </thead>
+                <tbody>";
+
+        foreach ($operations as $operation) {
+            $html .= "
+                <tr>
+                    <td style='border: 1px solid black; padding: 8px;'>{$operation['operation_id']}</td>
+                    <td style='border: 1px solid black; padding: 8px;'>{$operation['date']}</td>
+                    <td style='border: 1px solid black; padding: 8px;'>{$operation['details']}</td>
+                    <td style='border: 1px solid black; padding: 8px;'>{$operation['performed_by']}</td>
+                </tr>";
+        }
+
+        $html .= "
+                </tbody>
+            </table>
+        ";
+
+        // إنشاء PDF باستخدام DomPDF
+        $pdf = Pdf::loadHTML($html);
+
+        // إرجاع PDF كاستجابة لتحميله
+        return $pdf->download("file_report_{$file->id}.pdf");
+    }
+
+
+    public function showFileReportCsv($file_id)
+    {
+
+        // جلب معلومات الملف مع العمليات المرتبطة والمستخدمين
+        $file = File::with(['user', 'group', 'fileEvents.user'])->find($file_id);
+
+        if (!$file) {
+            return response()->json(['message' => 'File not found'], 404);
+        }
+
+        // تنسيق البيانات
+        $operations = $file->fileEvents->map(function ($event) {
+            return [
+                $event->id,
+                $event->date,
+                $event->details,
+                $event->user ? $event->user->name : 'N/A',
+            ];
+        });
+
+        // إنشاء ملف CSV
+        $csvHeader = [
+            ['File Details:'], // يجب أن يكون مصفوفة
+        ];
+
+        $fileDetails = [
+            ['File Name', $file->name],
+            ['Extension', $file->extension],
+            ['Uploaded By', $file->user ? $file->user->name : 'N/A'],
+            ['Group', $file->group ? $file->group->name : 'N/A'],
+            ['Path', $file->path],
+            ['Is Active', $file->is_active ? 'Yes' : 'No'],
+            ['Is Reserved', $file->is_reserved ? 'Yes' : 'No'],
+            ['Created At', $file->created_at],
+        ];
+
+        $operationHeader = [
+            ['Operation ID', 'Date', 'Details', 'Performed By'],
+        ];
+
+        // دمج البيانات
+        $csvData = array_merge(
+            $csvHeader,
+            $fileDetails,
+            [['']], // سطر فارغ
+            $operationHeader,
+            $operations->toArray()
+        );
+
+        // إنشاء ملف CSV في الذاكرة
+        $fileName = "file_report_{$file->id}.csv";
+        $handle = fopen('php://temp', 'r+');
+        foreach ($csvData as $row) {
+            // التأكد أن كل عنصر عبارة عن مصفوفة
+            fputcsv($handle, is_array($row) ? $row : [$row]);
+        }
+        rewind($handle);
+
+        // إرجاع الملف كاستجابة
+        return Response::stream(function () use ($handle) {
+            fpassthru($handle);
+        }, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename={$fileName}",
+        ]);
+    }
+
+
+
 
 
     }

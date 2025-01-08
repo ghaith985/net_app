@@ -9,7 +9,7 @@ interface FileRepositoryInterface
     public function uploadFileToGroup($data): ?File;
     public function checkFileIfExist($group_id, $file_name, $file_extension): bool;
 
-    public function addFileEvent($file_id, $user_id);
+    public function addFileEvent($file_id, $user_id,$details);
     public function downloadFileById($id);
     public function deleteFile($data): bool;
     public function checkIn($data): bool;

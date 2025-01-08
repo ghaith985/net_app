@@ -70,6 +70,7 @@ class Kernel extends HttpKernel
         'FileReserved'=>\App\Http\Middleware\FileReserved::class,
         'CheckFileOwner'=>\App\Http\Middleware\CheckFileOwner::class,
         'PreventAdminActions'=>\App\Http\Middleware\PreventAdminActions::class,
+        'fileTracing' => \App\Http\Middleware\FileTracingMiddleware::class,
 
 
 

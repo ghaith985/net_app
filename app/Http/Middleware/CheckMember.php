@@ -16,6 +16,13 @@ class CheckMember
      */
     public function handle(Request $request, Closure $next): Response
     {
+        $user = auth()->user();
+
+        // تحقق إذا كان المستخدم Admin
+        if ($user->role_id == 1) { // Assuming 1 = Admin
+            // السماح للمستخدم Admin بالمتابعة دون تحقق إضافي
+            return $next($request);
+        }
         // التحقق إذا كان هناك 'group_id' في الطلب
         $group_id = $request->group_id;
 
